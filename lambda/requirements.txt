@@ -1,0 +1,5 @@
+# Lambda Dependencies for Lotto Automation
+# Note: boto3 is provided by Lambda runtime
+
+selenium>=4.0.0,<5.0.0
+webdriver-manager>=4.0.0

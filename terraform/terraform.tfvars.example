@@ -1,0 +1,19 @@
+# Lotto Automation - Terraform Variables Example
+# Copy this file to terraform.tfvars and update values
+
+aws_region         = "ap-northeast-2"
+environment        = "prod"
+project_name       = "lotto-automation"
+notification_email = "rolroralra@gmail.com"
+
+# Schedule: Every Monday at 15:00 KST (06:00 UTC)
+schedule_expression = "cron(0 6 ? * MON *)"
+
+# Lambda configuration
+lambda_timeout     = 300  # 5 minutes
+lambda_memory_size = 2048 # 2 GB (Chrome requires more memory)
+
+# After terraform apply, set credentials in Secrets Manager:
+# aws secretsmanager put-secret-value \
+#   --secret-id lotto-automation/credentials \
+#   --secret-string '{"accounts":[{"username":"id1","password":"pw1"},{"username":"id2","password":"pw2"}]}'
