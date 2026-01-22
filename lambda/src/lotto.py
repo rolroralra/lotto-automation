@@ -344,7 +344,7 @@ def check_lotto_balance(username: str, password: str) -> dict:
         driver.get('https://www.dhlottery.co.kr/mypage/home')
         time.sleep(5)
 
-        element = driver.find_element(By.XPATH, '//*[@id="totalAmt"]')
+        element = driver.find_element(By.XPATH, '//*[@id="divCrntEntrsAmt"]')
         balance_text = element.text.strip()
         balance = int(balance_text.replace("원", "").replace(",", ""))
 
