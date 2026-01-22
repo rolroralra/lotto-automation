@@ -15,4 +15,4 @@ resource "aws_secretsmanager_secret" "lotto_credentials" {
 # Format: {"accounts": [{"username": "id", "password": "pw"}, ...]}
 # aws secretsmanager put-secret-value \
 #   --secret-id lotto-automation/credentials \
-#   --secret-string '{"accounts":[{"username":"id1","password":"pw1"},{"username":"id2","password":"pw2"}]}'
+#   --secret-string '{"accounts":[{"username":"id1","password":"pw1"},{"username":"id2","password":"pw2"}],"lowBalanceThreshold":30000}}'

@@ -79,7 +79,7 @@ cd ../scripts && ./deploy.sh
 ```bash
 aws secretsmanager put-secret-value \
   --secret-id lotto-automation/credentials \
-  --secret-string '{"accounts":[{"username":"아이디1","password":"비밀번호1"},{"username":"아이디2","password":"비밀번호2"}]}'
+  --secret-string '{"accounts":[{"username":"아이디1","password":"비밀번호1"},{"username":"아이디2","password":"비밀번호2"}],"lowBalanceThreshold":30000}'
 ```
 
 ### 4. SNS 이메일 구독 확인
@@ -135,16 +135,24 @@ lotto-project/
   "accounts": [
     {"username": "아이디1", "password": "비밀번호1"},
     {"username": "아이디2", "password": "비밀번호2"}
-  ]
+  ],
+  "lowBalanceThreshold": 30000
 }
 ```
+
+| 필드 | 타입 | 설명 | 기본값 |
+|------|------|------|--------|
+| `accounts` | array | 로또 계정 목록 (필수) | - |
+| `lowBalanceThreshold` | number | 잔액 알림 기준 (원) | `30000` |
 
 계정 추가/수정:
 ```bash
 aws secretsmanager put-secret-value \
   --secret-id lotto-automation/credentials \
-  --secret-string '{"accounts":[{"username":"id1","password":"pw1"},{"username":"id2","password":"pw2"}]}'
+  --secret-string '{"accounts":[{"username":"id1","password":"pw1"},{"username":"id2","password":"pw2"}],"lowBalanceThreshold":30000}'
 ```
+
+> **Note**: `lowBalanceThreshold` 값 이하일 경우 SNS를 통해 잔액 부족 알림이 발송됩니다.
 
 ---
 
@@ -156,23 +164,21 @@ aws lambda invoke \
   --function-name lotto-automation-prod \
   --payload '{"action":"buy_ticket"}' \
   --cli-binary-format raw-in-base64-out \
-  response.json
-
-cat response.json
+  /dev/stdout 2>/dev/null
 
 # 잔액 확인만 실행
 aws lambda invoke \
   --function-name lotto-automation-prod \
   --payload '{"action":"check_balance"}' \
   --cli-binary-format raw-in-base64-out \
-  response.json
+  /dev/stdout 2>/dev/null
 
 # 당첨 결과 확인
 aws lambda invoke \
   --function-name lotto-automation-prod \
   --payload '{"action":"check_result"}' \
   --cli-binary-format raw-in-base64-out \
-  response.json
+  /dev/stdout 2>/dev/null
 
 # 로그 확인
 aws logs tail /aws/lambda/lotto-automation-prod --follow

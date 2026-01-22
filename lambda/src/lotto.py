@@ -6,14 +6,72 @@ import os
 import time
 import shutil
 import logging
+import boto3
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from secrets_manager import get_low_balance_threshold
 
 logger = logging.getLogger(__name__)
+
+# SNS client for notifications
+sns_client = boto3.client('sns')
+
+# Default low balance threshold (KRW) - can be overridden by Secrets Manager
+DEFAULT_LOW_BALANCE_THRESHOLD = 30000
+
+
+def send_low_balance_notification(username: str, balance: int, balance_text: str, threshold: int):
+    """Send SNS notification when balance is below threshold"""
+    sns_topic_arn = os.environ.get('SNS_TOPIC_ARN')
+    if not sns_topic_arn:
+        logger.warning("SNS_TOPIC_ARN not configured, skipping low balance notification")
+        return
+
+    try:
+        subject = "[Lotto] Low Balance Alert - Recharge Required"
+        message = (
+            f"Account: {username}\n"
+            f"Current Balance: {balance_text}\n"
+            f"Threshold: {threshold:,}원\n\n"
+            f"Your lotto account balance is below the threshold.\n"
+            f"Please recharge to continue automatic purchases."
+        )
+        sns_client.publish(
+            TopicArn=sns_topic_arn,
+            Subject=subject,
+            Message=message
+        )
+        logger.info(f"{username}: Low balance notification sent (balance: {balance_text})")
+    except Exception as e:
+        logger.error(f"{username}: Failed to send low balance notification: {e}")
+
+
+def send_winning_notification(username: str):
+    """Send SNS notification when winning ticket is found"""
+    sns_topic_arn = os.environ.get('SNS_TOPIC_ARN')
+    if not sns_topic_arn:
+        logger.warning("SNS_TOPIC_ARN not configured, skipping winning notification")
+        return
+
+    try:
+        subject = "[Lotto] Winning Ticket Found!"
+        message = (
+            f"Account: {username}\n\n"
+            f"Congratulations! You have winning ticket(s)!\n\n"
+            f"Please check your account for details."
+        )
+        sns_client.publish(
+            TopicArn=sns_topic_arn,
+            Subject=subject,
+            Message=message
+        )
+        logger.info(f"{username}: Winning notification sent")
+    except Exception as e:
+        logger.error(f"{username}: Failed to send winning notification: {e}")
 
 
 def cleanup_chrome_tmp():
@@ -337,6 +395,10 @@ def check_lotto_balance(username: str, password: str) -> dict:
     """Check account balance"""
     driver = None
 
+    # Get threshold from Secrets Manager
+    secret_name = os.environ.get('SECRET_NAME')
+    threshold = get_low_balance_threshold(secret_name, DEFAULT_LOW_BALANCE_THRESHOLD) if secret_name else DEFAULT_LOW_BALANCE_THRESHOLD
+
     try:
         driver = get_chrome_driver()
         login_lotto(driver, username, password)
@@ -350,6 +412,11 @@ def check_lotto_balance(username: str, password: str) -> dict:
 
         message = f"{username}: Current balance is {balance_text}"
         logger.info(message)
+
+        # Check if balance is below threshold and send notification
+        if balance <= threshold:
+            logger.warning(f"{username}: Balance ({balance_text}) is below threshold ({threshold:,}원)")
+            send_low_balance_notification(username, balance, balance_text, threshold)
 
         return {
             'status': 'success',
@@ -412,6 +479,7 @@ def check_lotto_result(username: str, password: str) -> dict:
 
         if has_winning:
             message = f"{username}: Found winning ticket!"
+            send_winning_notification(username)
         else:
             message = f"{username}: No winning tickets"
 

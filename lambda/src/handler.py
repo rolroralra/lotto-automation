@@ -93,6 +93,10 @@ def lambda_handler(event, context):
                     balance_result = check_lotto_balance(username, password)
                     account_results.append(balance_result)
 
+                    # Also check result after purchase
+                    check_result = check_lotto_result(username, password)
+                    account_results.append(check_result)
+
                 elif action == 'check_balance':
                     result = check_lotto_balance(username, password)
                     account_results.append(result)

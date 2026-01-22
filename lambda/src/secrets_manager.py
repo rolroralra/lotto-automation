@@ -75,3 +75,34 @@ def get_all_credentials(secret_name: str) -> list:
         elif error_code == 'AccessDeniedException':
             raise PermissionError(f"Access denied to secret: {secret_name}")
         raise
+
+
+def get_low_balance_threshold(secret_name: str, default: int = 30000) -> int:
+    """
+    Retrieve low balance threshold from Secrets Manager
+
+    Args:
+        secret_name: Name of the secret (e.g., 'lotto-automation/credentials')
+        default: Default threshold value if not set in secret (default: 30000)
+
+    Returns:
+        int: Low balance threshold in KRW
+
+    Secret format:
+        {
+          "accounts": [...],
+          "lowBalanceThreshold": 30000
+        }
+    """
+    client = get_secrets_client()
+
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+        secret_string = response['SecretString']
+        secret_data = json.loads(secret_string)
+
+        threshold = secret_data.get('lowBalanceThreshold', default)
+        return int(threshold)
+
+    except (ClientError, json.JSONDecodeError, ValueError):
+        return default
