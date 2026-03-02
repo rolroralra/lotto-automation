@@ -22,6 +22,28 @@ resource "aws_ecr_repository" "lambda" {
   }
 }
 
+# ECR Lifecycle Policy - keep only latest 10 images
+resource "aws_ecr_lifecycle_policy" "lambda" {
+  repository = aws_ecr_repository.lambda.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 10 images"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 10
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
 # Build and push Docker image
 resource "null_resource" "docker_build" {
   triggers = {
