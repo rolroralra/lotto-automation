@@ -454,8 +454,8 @@ def check_lotto_result(username: str, password: str) -> dict:
         time.sleep(5)
 
         # Click 1 Month button
-        wait_for_element(driver, By.XPATH, '//*[@id="containerBox"]/div[2]/div/div/div/form/div[1]/div/div[2]/div/div/div[2]/div[2]/button[3]').click()
-        time.sleep(1)
+        # wait_for_element(driver, By.XPATH, '//*[@id="containerBox"]/div[2]/div/div/div/form/div[1]/div/div[2]/div/div/div[2]/div[2]/button[3]').click()
+        # time.sleep(1)
 
         # Click search button
         wait_for_element(driver, By.XPATH, '//*[@id="btnSrch"]').click()
